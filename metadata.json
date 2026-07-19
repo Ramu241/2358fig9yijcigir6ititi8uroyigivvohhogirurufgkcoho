@@ -1,0 +1,6 @@
+{
+  "name": "GODXGOKU.PREDICTOR",
+  "description": "Premium quantum pattern analysis and predictive intelligence platform by GODXGOKU.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
