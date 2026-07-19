@@ -8,7 +8,9 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [verifyPassword, setVerifyPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deviceId, setDeviceId] = useState('');
 
@@ -27,6 +29,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     const cleanUser = username.trim();
     const cleanPass = password.trim().toLowerCase();
@@ -38,6 +41,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     if (!cleanPass) {
       setError('LICENSE KEY / PASSWORD IS REQUIRED!');
+      return;
+    }
+
+    if (!verifyPassword.trim()) {
+      setError('CONFIRM LICENSE KEY / PASSWORD IS REQUIRED!');
+      return;
+    }
+
+    if (password !== verifyPassword) {
+      setError('CONFIRM PASSWORD DOES NOT MATCH! PLEASE ENTER EXACTLY SAME PASSWORD.');
       return;
     }
 
@@ -56,7 +69,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setTimeout(() => {
       setIsLoading(false);
       if (allowed.some(p => cleanPass.includes(p)) || cleanPass === 'admin') {
-        onLoginSuccess(cleanUser);
+        // Explicitly set success message containing the submitted password
+        setSuccessMessage(password);
+        
+        // Wait 2.5 seconds to let the user see the success screen and submitted password
+        setTimeout(() => {
+          onLoginSuccess(cleanUser);
+        }, 2500);
       } else {
         setError('INVALID LICENSE KEY! JOIN OUR TELEGRAM CHANNEL TO GET THE PASSWORD.');
       }
@@ -129,6 +148,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
+          {/* Confirm License Key / Verify Password */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] tracking-widest font-bold text-slate-400 uppercase flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+              Verify Password / Confirm License
+            </label>
+            <input
+              type="password"
+              value={verifyPassword}
+              onChange={(e) => setVerifyPassword(e.target.value)}
+              placeholder="RE-ENTER PASSWORD TO ACTIVATE"
+              autoComplete="off"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-950/85 text-xs text-white uppercase tracking-widest outline-none focus:border-amber-500/50 focus:shadow-[0_0_15px_rgba(245,158,11,0.15)] transition-all duration-300 placeholder:text-slate-600 placeholder:text-[9px]"
+            />
+          </div>
+
           {/* Device ID Display */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] tracking-widest font-bold text-slate-400 uppercase flex items-center gap-1.5">
@@ -195,6 +230,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           © 2026 GODXGOKU.PREDICTOR | QUANTUM TECHNOLOGY
         </div>
       </div>
+
+      {/* High-tech Full-Screen Success Overlay when successfully activated */}
+      {successMessage && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
+          <div className="w-full max-w-sm border border-emerald-500/30 bg-slate-900/80 rounded-2xl p-6 flex flex-col items-center text-center shadow-[0_0_50px_rgba(16,185,129,0.25)] relative overflow-hidden">
+            {/* Corner Brackets */}
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-500 rounded-tl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-500 rounded-tr pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-500 rounded-bl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-500 rounded-br pointer-events-none" />
+
+            <div className="w-16 h-16 rounded-full border border-emerald-500 p-0.5 flex items-center justify-center bg-slate-950 mb-4 animate-pulse-glow" style={{ borderColor: '#10b981' }}>
+              <span className="text-emerald-400 text-3xl font-black">✓</span>
+            </div>
+
+            <h3 className="text-lg font-black tracking-widest text-emerald-400 uppercase">
+              LICENSE ACTIVATED
+            </h3>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1">
+              CONNECTED & SENT TO QUANTUM MATRIX
+            </p>
+
+            <div className="my-5 w-full bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-col items-center gap-1">
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                TRANSMITTED PASSWORD / LICENSE KEY:
+              </span>
+              <span className="text-xs font-mono font-black text-amber-400 tracking-wider break-all drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">
+                {successMessage}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-[9px] font-black tracking-widest text-emerald-400 uppercase animate-pulse">
+              <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              REDIRECTING TO PREDICTION DASHBOARD...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

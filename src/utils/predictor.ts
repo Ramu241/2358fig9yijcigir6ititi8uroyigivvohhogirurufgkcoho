@@ -36,7 +36,11 @@ export async function fetchRealTimeDraws(timeFrame: TimeFrame): Promise<{
   }
 
   // Fallback to time-calculated period index
-  const fallback = getCurrentPeriod(timeFrame);
+  const savedTz = (typeof localStorage !== 'undefined' ? localStorage.getItem('wingo_timezone') : 'IST') as 'IST' | 'UTC' | 'LOCAL' || 'IST';
+  const savedOffset = typeof localStorage !== 'undefined' ? parseInt(localStorage.getItem('wingo_period_offset') || '0') : 0;
+  const savedSecOffset = typeof localStorage !== 'undefined' ? parseInt(localStorage.getItem('wingo_seconds_offset') || '0') : 0;
+  
+  const fallback = getCurrentPeriod(timeFrame, savedTz, savedOffset, savedSecOffset);
   return { list: [], currentPeriod: fallback.period, secondsLeft: fallback.secondsLeft };
 }
 
@@ -81,29 +85,57 @@ class SeededRandom {
 }
 
 // Get formatted period code based on current date and time
-export function getCurrentPeriod(timeFrame: TimeFrame): { period: string; secondsLeft: number } {
+export function getCurrentPeriod(
+  timeFrame: TimeFrame,
+  timezone: 'IST' | 'UTC' | 'LOCAL' = 'IST',
+  customOffset: number = 0,
+  secondsOffset: number = 0
+): { period: string; secondsLeft: number } {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const date = String(now.getDate()).padStart(2, '0');
+  
+  // Apply time zone
+  let targetTime = now;
+  if (timezone === 'IST') {
+    // Indian Standard Time is UTC + 5:30
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    targetTime = new Date(utc + 5.5 * 3600000);
+  } else if (timezone === 'UTC') {
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    targetTime = new Date(utc);
+  }
+
+  const year = targetTime.getFullYear();
+  const month = String(targetTime.getMonth() + 1).padStart(2, '0');
+  const date = String(targetTime.getDate()).padStart(2, '0');
   const dateStr = `${year}${month}${date}`;
 
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
+  const hours = targetTime.getHours();
+  const minutes = targetTime.getMinutes();
+  const seconds = targetTime.getSeconds();
 
   if (timeFrame === '1m') {
     const totalMinutes = hours * 60 + minutes;
-    const periodIndex = 1000 + totalMinutes;
+    const periodIndex = 1000 + totalMinutes + customOffset;
     const period = `${dateStr}${periodIndex}`;
-    const secondsLeft = 60 - seconds;
+    
+    // Calculate seconds left with offset
+    let secondsLeft = 60 - seconds + secondsOffset;
+    while (secondsLeft <= 0) secondsLeft += 60;
+    while (secondsLeft > 60) secondsLeft -= 60;
+    
     return { period, secondsLeft };
   } else {
     // 30s timeframe
     const totalHalfMinutes = (hours * 60 + minutes) * 2 + (seconds >= 30 ? 1 : 0);
-    const periodIndex = 2000 + totalHalfMinutes;
+    const periodIndex = 2000 + totalHalfMinutes + customOffset;
     const period = `${dateStr}${periodIndex}`;
-    const secondsLeft = seconds >= 30 ? 60 - seconds : 30 - seconds;
+    
+    // Calculate seconds left with offset
+    const halfSec = seconds >= 30 ? 60 - seconds : 30 - seconds;
+    let secondsLeft = halfSec + secondsOffset;
+    while (secondsLeft <= 0) secondsLeft += 30;
+    while (secondsLeft > 30) secondsLeft -= 30;
+    
     return { period, secondsLeft };
   }
 }
@@ -195,7 +227,11 @@ export function getHistoricalRecords(
   timeFrame: TimeFrame,
   count: number = 30
 ): PredictionItem[] {
-  const { period: currentPeriod } = getCurrentPeriod(timeFrame);
+  const savedTz = (typeof localStorage !== 'undefined' ? localStorage.getItem('wingo_timezone') : 'IST') as 'IST' | 'UTC' | 'LOCAL' || 'IST';
+  const savedOffset = typeof localStorage !== 'undefined' ? parseInt(localStorage.getItem('wingo_period_offset') || '0') : 0;
+  const savedSecOffset = typeof localStorage !== 'undefined' ? parseInt(localStorage.getItem('wingo_seconds_offset') || '0') : 0;
+
+  const { period: currentPeriod } = getCurrentPeriod(timeFrame, savedTz, savedOffset, savedSecOffset);
   const records: PredictionItem[] = [];
 
   let tempPeriod = BigInt(currentPeriod);
