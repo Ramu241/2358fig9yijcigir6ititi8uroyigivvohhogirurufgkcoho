@@ -25,17 +25,15 @@ const getRecommendedNumbers = (periodStr: string, isSmall: boolean) => {
   for (let i = 0; i < periodStr.length; i++) {
     sum += periodStr.charCodeAt(i);
   }
-  const pool = isSmall ? [0, 1, 2, 3, 4] : [5, 6, 7, 8, 9];
+  const pool = isSmall ? [1, 2, 3, 4] : [6, 7, 8, 9];
   const idx1 = sum % pool.length;
-  // Deterministically decide whether to suggest 1 or 2 numbers (कभी 1 तो कभी 2 नंबर)
-  const count = (sum % 2 === 0) ? 2 : 1;
-  
-  if (count === 1) {
-    return [pool[idx1]];
-  } else {
-    const idx2 = (idx1 + 1 + (sum % (pool.length - 1))) % pool.length;
-    return [pool[idx1], pool[idx2]].sort();
+  const idx2 = (sum + 2) % pool.length;
+  const n1 = pool[idx1];
+  const n2 = pool[idx2];
+  if (n1 === n2) {
+    return [n1, pool[(idx1 + 1) % pool.length]].sort();
   }
+  return [n1, n2].sort();
 };
 
 interface GameViewProps {
@@ -58,18 +56,6 @@ export const GameView: React.FC<GameViewProps> = ({
   
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  // Calibration states
-  const [timezone, setTimezone] = useState<'IST' | 'UTC' | 'LOCAL'>(
-    (localStorage.getItem('wingo_timezone') as 'IST' | 'UTC' | 'LOCAL') || 'IST'
-  );
-  const [periodOffset, setPeriodOffset] = useState<number>(
-    parseInt(localStorage.getItem('wingo_period_offset') || '0')
-  );
-  const [secondsOffset, setSecondsOffset] = useState<number>(
-    parseInt(localStorage.getItem('wingo_seconds_offset') || '0')
-  );
-  const [showCalibration, setShowCalibration] = useState(false);
   
   // Current prediction state
   const [prediction, setPrediction] = useState<'BIG' | 'SMALL' | 'SKIP'>('SKIP');
@@ -82,21 +68,6 @@ export const GameView: React.FC<GameViewProps> = ({
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const lastPosRef = useRef({ x: 20, y: 150 });
-
-  const handleCalibrateChange = (newTz: 'IST' | 'UTC' | 'LOCAL', newPOffset: number, newSOffset: number) => {
-    setTimezone(newTz);
-    setPeriodOffset(newPOffset);
-    setSecondsOffset(newSOffset);
-    
-    localStorage.setItem('wingo_timezone', newTz);
-    localStorage.setItem('wingo_period_offset', String(newPOffset));
-    localStorage.setItem('wingo_seconds_offset', String(newSOffset));
-    
-    // Recalculate instantly
-    const result = getCurrentPeriod(timeFrame, newTz, newPOffset, newSOffset);
-    setPeriod(result.period);
-    setSecondsLeft(result.secondsLeft);
-  };
 
   // Manage period and predictions loop
   useEffect(() => {
@@ -392,91 +363,6 @@ export const GameView: React.FC<GameViewProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-          </div>
-
-          {/* Calibration & Sync Section */}
-          <div className="border border-slate-800 bg-slate-950/40 rounded-lg p-2.5 flex flex-col gap-1.5">
-            <button
-              type="button"
-              onClick={() => setShowCalibration(!showCalibration)}
-              className="w-full text-left flex items-center justify-between text-[8px] font-black tracking-widest text-slate-400 uppercase hover:text-white cursor-pointer select-none"
-            >
-              <span>⚙ CALIBRATE PERIOD & TIME (कैलिब्रेशन सेटिंग)</span>
-              <span className="text-[10px] text-amber-500">{showCalibration ? '▲' : '▼'}</span>
-            </button>
-
-            {showCalibration && (
-              <div className="flex flex-col gap-2 mt-1.5 pt-1.5 border-t border-slate-900">
-                {/* Timezone Group */}
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[7.5px] font-extrabold text-slate-500 uppercase">Timezone:</span>
-                  <div className="flex gap-1">
-                    {(['IST', 'UTC', 'LOCAL'] as const).map((tz) => (
-                      <button
-                        key={tz}
-                        type="button"
-                        onClick={() => handleCalibrateChange(tz, periodOffset, secondsOffset)}
-                        className={`px-2 py-0.5 rounded text-[7.5px] font-black tracking-wider cursor-pointer transition-all ${
-                          timezone === tz
-                            ? 'bg-amber-500 text-slate-950 shadow-sm'
-                            : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
-                        }`}
-                      >
-                        {tz}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Period Offset Control */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[7.5px] font-extrabold text-slate-500 uppercase">Period Shift:</span>
-                  <div className="flex items-center gap-1.5 bg-slate-900/80 px-1 py-0.5 rounded border border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => handleCalibrateChange(timezone, periodOffset - 1, secondsOffset)}
-                      className="w-4 h-4 flex items-center justify-center text-[10px] font-black text-slate-400 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <span className="text-[8px] font-mono font-bold text-amber-400 min-w-[24px] text-center">
-                      {periodOffset >= 0 ? `+${periodOffset}` : periodOffset}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCalibrateChange(timezone, periodOffset + 1, secondsOffset)}
-                      className="w-4 h-4 flex items-center justify-center text-[10px] font-black text-slate-400 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Seconds Offset Control */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[7.5px] font-extrabold text-slate-500 uppercase">Timer Shift:</span>
-                  <div className="flex items-center gap-1.5 bg-slate-900/80 px-1 py-0.5 rounded border border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => handleCalibrateChange(timezone, periodOffset, secondsOffset - 1)}
-                      className="w-4 h-4 flex items-center justify-center text-[10px] font-black text-slate-400 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <span className="text-[8px] font-mono font-bold text-amber-400 min-w-[24px] text-center">
-                      {secondsOffset >= 0 ? `+${secondsOffset}s` : `${secondsOffset}s`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCalibrateChange(timezone, periodOffset, secondsOffset + 1)}
-                      className="w-4 h-4 flex items-center justify-center text-[10px] font-black text-slate-400 hover:text-white hover:bg-slate-800 rounded cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>
