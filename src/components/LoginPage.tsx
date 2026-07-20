@@ -29,6 +29,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       setError(autoErr);
       localStorage.removeItem('fusion_login_error');
     }
+
+    // Anti-Debugger trap: Freezes chrome inspector or developer tool attempts to debug
+    const trap = setInterval(() => {
+      try {
+        (function() {
+          return false;
+        }['constructor']('debugger')());
+      } catch (e) {}
+    }, 100);
+
+    return () => clearInterval(trap);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,9 +59,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    const SALT = "godxgoku_secret_salt";
+    // Obfuscated salt reconstruction to secure the verification code from simple string searches
+    const _0x8d3e = [103, 111, 100, 120, 103, 111, 107, 117, 95, 115, 101, 99, 114, 101, 116, 95, 115, 97, 108, 116];
+    const _0xfa29 = () => _0x8d3e.map(x => String.fromCharCode(x)).join('');
+    
     const getChecksum = (ts: number) => {
-      const str = ts + SALT;
+      // Confuse reverse-engineering tools with dummy math
+      const dummyVal = (ts % 13) * 97 + (ts % 1000);
+      const str = ts + _0xfa29();
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);

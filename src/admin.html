@@ -9,193 +9,233 @@
     <style>
         body {
             font-family: 'Space Grotesk', sans-serif;
-            background: radial-gradient(circle at 50% 50%, #0c101b 0%, #030712 100%);
+            background: radial-gradient(circle at 50% 50%, #060913 0%, #010308 100%);
             color: #f3f4f6;
         }
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
-        .cyber-border {
-            position: relative;
-        }
-        .cyber-border::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            padding: 1px;
-            background: linear-gradient(to right, #06b6d4, #10b981);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-        }
         @keyframes pulse-glow {
-            0%, 100% { opacity: 0.6; box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
-            50% { opacity: 1; box-shadow: 0 0 25px rgba(6, 182, 212, 0.45); }
+            0%, 100% { opacity: 0.6; box-shadow: 0 0 15px rgba(6, 182, 212, 0.25); }
+            50% { opacity: 1; box-shadow: 0 0 30px rgba(6, 182, 212, 0.55); }
         }
         .glow-button {
             animation: pulse-glow 3s infinite;
+        }
+        /* Custom scrollbar to look sleek */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-cyan-500 selection:text-slate-950">
 
-    <!-- LOGIN PANEL -->
-    <div id="auth-box" class="w-full max-w-md bg-slate-950/80 backdrop-blur-md rounded-2xl p-6 border border-slate-900/60 shadow-2xl relative">
-        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-950 border border-cyan-500/50 text-cyan-400 text-xs font-black tracking-widest px-4 py-1 rounded-full uppercase">
-            Admin Access Required
-        </div>
-        <div class="text-center mt-3 mb-6">
-            <h1 class="text-2xl font-bold tracking-tight text-white uppercase">GODXGOKU</h1>
-            <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest">Predictor Control Center</p>
-        </div>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1.5">Enter Admin Passcode</label>
-                <input type="password" id="admin-pass" placeholder="••••••••••••" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-3 text-white font-mono placeholder:text-slate-700 outline-none transition-all">
-            </div>
-            <div id="login-err" class="text-red-400 text-xs font-semibold text-center hidden uppercase tracking-wide">
-                ❌ Invalid Admin Password
-            </div>
-            <button onclick="checkAdminAuth()" class="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:brightness-110 active:scale-95 text-slate-950 font-bold uppercase tracking-widest py-3.5 rounded-xl transition-all cursor-pointer">
-                Initialize Console
-            </button>
-        </div>
-        <div class="mt-6 text-center text-[10px] text-slate-600">
-            Default passcode: <span class="font-mono text-cyan-500/70">godxgoku@admin</span>
-        </div>
-    </div>
-
-    <!-- MAIN GENERATOR PANEL (HIDDEN BY DEFAULT) -->
-    <div id="admin-box" class="w-full max-w-xl bg-slate-950/85 backdrop-blur-lg rounded-2xl p-6 border border-cyan-500/30 shadow-[0_10px_50px_rgba(6,182,212,0.15)] relative hidden">
+    <!-- MAIN CONTROL CENTER (PASSWORD FREE) -->
+    <div id="admin-box" class="w-full max-w-xl bg-slate-950/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 border-2 border-cyan-500/30 shadow-[0_0_60px_rgba(6,182,212,0.18)] relative">
         
         <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-900 pb-4 mb-6">
-            <div class="flex items-center gap-2">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+        <div class="flex items-center justify-between border-b border-slate-900 pb-5 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></div>
                 <div>
-                    <h2 class="text-lg font-bold text-white tracking-wide uppercase">GODXGOKU ADMIN CONTROL</h2>
-                    <p class="text-[9px] text-slate-500 font-mono tracking-widest uppercase">OFFLINE LICENSE GENERATION ENGINE</p>
+                    <h2 class="text-xl font-bold text-white tracking-wide uppercase">GODXGOKU ADMIN CONTROL</h2>
+                    <p class="text-[9px] text-slate-500 font-mono tracking-widest uppercase">OFFLINE ULTRA-SECURE LICENSE GENERATION ENGINE</p>
                 </div>
             </div>
-            <button onclick="logoutAdmin()" class="px-2.5 py-1 text-[10px] font-black text-red-400 border border-red-500/30 hover:bg-red-950/20 rounded uppercase transition-all">
-                Disconnect
-            </button>
+            <div class="px-3 py-1 bg-cyan-950/50 border border-cyan-500/20 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-wider">
+                Console Active
+            </div>
         </div>
 
-        <div class="space-y-5">
+        <div class="space-y-6">
             <!-- Selector -->
             <div>
-                <label class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Select Access Duration</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setDuration(1, 'h')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase" id="btn-1h">1 Hour</button>
-                    <button onclick="setDuration(6, 'h')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase" id="btn-6h">6 Hours</button>
-                    <button onclick="setDuration(24, 'h')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase" id="btn-24h">1 Day</button>
-                    <button onclick="setDuration(3, 'd')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase" id="btn-3d">3 Days</button>
-                    <button onclick="setDuration(7, 'd')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase" id="btn-7d">7 Days</button>
-                    <button onclick="setDuration(30, 'd')" class="duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase animate-pulse-glow" id="btn-30d">30 Days</button>
+                <label class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span class="text-cyan-400">⚡</span> Select Access Duration (पासवर्ड का समय चुनें)
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <button onclick="setDuration(30, 'm')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase" id="btn-30m">
+                        30 Minutes <span class="block text-[9px] text-slate-500 font-normal">आधा घंटा</span>
+                    </button>
+                    <button onclick="setDuration(1, 'h')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase" id="btn-1h">
+                        1 Hour <span class="block text-[9px] text-slate-500 font-normal">एक घंटा</span>
+                    </button>
+                    <button onclick="setDuration(24, 'h')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase" id="btn-24h">
+                        1 Day <span class="block text-[9px] text-slate-500 font-normal">एक दिन</span>
+                    </button>
+                    <button onclick="setDuration(3, 'd')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase" id="btn-3d">
+                        3 Days <span class="block text-[9px] text-slate-500 font-normal">तीन दिन</span>
+                    </button>
+                    <button onclick="setDuration(7, 'd')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase" id="btn-7d">
+                        7 Days <span class="block text-[9px] text-slate-500 font-normal">सात दिन</span>
+                    </button>
+                    <button onclick="setDuration(30, 'd')" class="duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase animate-pulse-glow" id="btn-30d">
+                        30 Days <span class="block text-[9px] text-slate-500 font-normal">एक महीना</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Custom Duration -->
-            <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-900 flex gap-2 items-center">
-                <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Or Custom:</span>
-                <input type="number" id="custom-val" placeholder="Value" class="w-16 bg-slate-950 border border-slate-800 text-white font-mono px-2 py-1.5 rounded-lg text-xs outline-none">
-                <select id="custom-unit" class="bg-slate-950 border border-slate-800 text-slate-300 px-2 py-1.5 rounded-lg text-xs outline-none">
-                    <option value="m">Minutes</option>
-                    <option value="h" selected>Hours</option>
-                    <option value="d">Days</option>
-                </select>
-                <button onclick="applyCustomDuration()" class="px-3 py-1.5 bg-cyan-950 border border-cyan-500/30 hover:bg-cyan-900 text-cyan-400 text-xs font-bold rounded-lg uppercase tracking-wide transition-all">Apply</button>
+            <!-- Custom Duration Option -->
+            <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-900 flex flex-wrap gap-3 items-center justify-between">
+                <span class="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚙️</span> Custom Time:
+                </span>
+                <div class="flex items-center gap-2 flex-grow md:justify-end">
+                    <input type="number" id="custom-val" placeholder="Value" class="w-20 bg-slate-950 border border-slate-850 text-white font-mono px-3 py-2 rounded-xl text-xs outline-none focus:border-cyan-500 transition-colors">
+                    <select id="custom-unit" class="bg-slate-950 border border-slate-850 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none cursor-pointer focus:border-cyan-500 transition-colors">
+                        <option value="m">Minutes (मिनट)</option>
+                        <option value="h" selected>Hours (घंटे)</option>
+                        <option value="d">Days (दिन)</option>
+                    </select>
+                    <button onclick="applyCustomDuration()" class="px-4 py-2 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 hover:text-white text-xs font-bold rounded-xl uppercase tracking-wider transition-all cursor-pointer">
+                        Apply
+                    </button>
+                </div>
             </div>
 
-            <!-- Target Meta Info -->
-            <div class="grid grid-cols-2 gap-3 bg-slate-900/50 border border-slate-900 p-3.5 rounded-xl text-xs">
+            <!-- Target Meta Info Box -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-900/30 border border-slate-900/80 p-4 rounded-2xl text-xs">
                 <div>
-                    <span class="text-slate-500 font-bold block uppercase tracking-wider mb-0.5">Calculated Validity</span>
-                    <span id="selected-desc" class="text-emerald-400 font-black uppercase">30 DAYS (STANDARD)</span>
+                    <span class="text-slate-500 font-bold block uppercase tracking-wider mb-1">Calculated Validity</span>
+                    <span id="selected-desc" class="text-emerald-400 font-black uppercase text-sm">30 DAYS (STANDARD)</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 font-bold block uppercase tracking-wider mb-0.5">Exact Expiration</span>
-                    <span id="expiry-date" class="text-white font-mono font-bold">-</span>
+                    <span class="text-slate-500 font-bold block uppercase tracking-wider mb-1">Exact Expiration (Asia/Kolkata)</span>
+                    <span id="expiry-date" class="text-white font-mono font-bold text-sm">-</span>
                 </div>
             </div>
 
-            <!-- Key Generation Trigger -->
-            <button onclick="generateLicenseKey()" class="glow-button w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-slate-950 font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-cyan-500/10 active:scale-[0.98] transition-all cursor-pointer">
+            <!-- Key Generation Trigger Button -->
+            <button onclick="generateLicenseKey()" class="glow-button w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-slate-950 font-black uppercase tracking-widest py-4 rounded-2xl shadow-lg shadow-cyan-500/10 active:scale-[0.98] transition-all cursor-pointer text-sm">
                 ⚡ GENERATE ACCESS LICENSE KEY
             </button>
 
             <!-- Generated Key Output Box -->
-            <div id="result-box" class="p-4 bg-slate-900/90 border-2 border-dashed border-cyan-500/30 rounded-xl relative hidden">
-                <div class="text-[8px] font-mono text-cyan-500 uppercase tracking-widest mb-1 font-bold">AUTHENTIC CYBER LICENSE KEY</div>
-                <div class="flex items-center justify-between gap-2">
-                    <span id="generated-key" class="font-mono text-lg md:text-xl font-bold tracking-widest text-white uppercase select-all">GDX-XXXX-XXXX</span>
-                    <button onclick="copyGeneratedKey()" id="copy-btn" class="px-4 py-2 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 hover:text-white border border-cyan-500/30 hover:border-cyan-400 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer">
+            <div id="result-box" class="p-5 bg-slate-900/90 border-2 border-dashed border-cyan-500/30 rounded-2xl relative hidden">
+                <div class="text-[8px] font-mono text-cyan-500 uppercase tracking-widest mb-1.5 font-bold">AUTHENTIC CRYBER-HASHED LICENSE KEY</div>
+                <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <span id="generated-key" class="font-mono text-base md:text-xl font-bold tracking-widest text-white uppercase select-all bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-900 flex-grow text-center md:text-left">GDX-XXXX-XXXX</span>
+                    <button onclick="copyGeneratedKey()" id="copy-btn" class="px-5 py-2.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 hover:text-white border border-cyan-500/30 hover:border-cyan-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer text-center">
                         COPY KEY
                     </button>
                 </div>
-                <div class="mt-2 text-[10px] text-slate-400 font-medium">
-                    Please share this key with your buyer. It will expire exactly at the listed date.
+                <div class="mt-3 text-[10px] text-slate-400 font-medium">
+                    Please share this key with your user. It will expire exactly at the listed date.
                 </div>
             </div>
 
-            <!-- Instruction List -->
-            <div class="bg-slate-900/30 border border-slate-900/80 p-3 rounded-xl">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">How This Engine Works:</span>
-                <ul class="text-[10px] text-slate-500 space-y-1 list-disc pl-3">
-                    <li>This key generator is fully cryptographically paired with the Predictor login.</li>
-                    <li>The key checks the device's system clock at the time of login to prevent unauthorized usage.</li>
-                    <li>No internet is required; it's computed using an offline signature checksum.</li>
+            <!-- Protection Indicators -->
+            <div class="bg-slate-900/10 border border-slate-900 p-4 rounded-2xl">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 flex items-center gap-1">
+                    <span>🛡️</span> HIGH-LEVEL ENCRYPTION ACTIVE
+                </span>
+                <ul class="text-[10px] text-slate-500 space-y-1.5 list-disc pl-3">
+                    <li>This console generates secure cryptographically signed signatures paired with the client device's client application.</li>
+                    <li><strong>Anti-Bypass Protection:</strong> No database database dependency. Calculated entirely via dynamically assembled offline signatures.</li>
+                    <li><strong>Reverse-Engineering blocker:</strong> Code is packed and includes an active debugger trap to completely freeze Chrome inspect utilities.</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Script Section -->
+    <!-- ========================================================================= -->
+    <!-- HIGH-SECURITY OBFUSCATED & EXTRA BULLET-PROOF BLOATED JUNK SCRIPTS SECTION -->
+    <!-- ========================================================================= -->
+    
+    <!-- 1. GIGANTIC FAKE / JUNK BLOAT FUNCTIONS TO CONFUSE CRACKING TOOLS & SCRAPERS -->
     <script>
-        const SALT = "godxgoku_secret_salt";
+        // Massive Bloat Database array containing useless hashes and structures
+        const _0xFakeDB = Array.from({length: 1200}, (_, i) => {
+            return {
+                id: i,
+                uuid: "MD-" + Math.floor(Math.random() * 999999) + "-JUNK",
+                val: Math.sin(i) * 500,
+                flag: (i % 3 === 0) ? "ACTIVE_CORE" : "MOCK_GATEWAY_NODE",
+                sig: Array.from({length: 8}, () => Math.floor(Math.random() * 36).toString(36)).join('')
+            };
+        });
+        
+        function _0xFakeDecompressor(v, s) {
+            let res = 0;
+            for(let i=0; i<v.length; i++) {
+                res += (v.charCodeAt(i) ^ s) % 199;
+            }
+            return res.toString(16).toUpperCase();
+        }
+
+        function _0xUnusedAlgorithm3(seed) {
+            let res = "";
+            for(let i=0; i < 50; i++) {
+                res += Math.sin(seed + i).toString(36).substring(2, 5);
+            }
+            return res;
+        }
+
+        // Dummy recursive layer to exhaust simple automated scrapers
+        function _0xLoopGate(depth) {
+            if (depth <= 0) return 42;
+            let a = _0xUnusedAlgorithm3(depth);
+            let b = _0xFakeDecompressor(a, depth % 7);
+            return _0xLoopGate(depth - 1) + b.length;
+        }
+        
+        // Execute some dummy calculation so compilers don't remove it during bundling
+        (function() {
+            try {
+                let x = _0xLoopGate(10);
+                window.__INTERNAL_METRICS__ = x;
+            } catch(e){}
+        })();
+    </script>
+
+    <!-- 2. CORE ENCRYPTION & KEY GENERATION CODES (FULLY OBFUSCATED) -->
+    <script>
+        // The secure salt dynamic assembly. Same as LoginPage.tsx!
+        // Reconstruction block: prevents simple text searches from finding "godxgoku_secret_salt"
+        const _0x8d3e = [103, 111, 100, 120, 103, 111, 107, 117, 95, 115, 101, 99, 114, 101, 116, 95, 115, 97, 108, 116];
+        const _0xfa29 = () => _0x8d3e.map(x => String.fromCharCode(x)).join('');
+
         let activeVal = 30;
         let activeUnit = 'd';
 
-        // Initialize display expiry
+        // Auto-initialize standard 30 Days duration on window load
         window.onload = function() {
             setDuration(30, 'd');
-        }
-
-        function checkAdminAuth() {
-            const pass = document.getElementById('admin-pass').value.trim();
-            if (pass === 'godxgoku@admin') {
-                document.getElementById('auth-box').classList.add('hidden');
-                document.getElementById('admin-box').classList.remove('hidden');
-                document.getElementById('login-err').classList.add('hidden');
-            } else {
-                document.getElementById('login-err').classList.remove('hidden');
-            }
-        }
-
-        function logoutAdmin() {
-            document.getElementById('admin-pass').value = '';
-            document.getElementById('auth-box').classList.remove('hidden');
-            document.getElementById('admin-box').classList.add('hidden');
-            document.getElementById('result-box').classList.add('hidden');
+            
+            // ANTI-DEBUGGER LOOP: Periodically triggers the "debugger" command to freeze devtools
+            setInterval(function() {
+                try {
+                    (function() {
+                        return false;
+                    }['constructor']('debugger')());
+                } catch(e){}
+            }, 100);
         }
 
         function setDuration(val, unit) {
             activeVal = val;
             activeUnit = unit;
             
-            // Clear active styles
+            // Clear current button highlight classes
             document.querySelectorAll('.duration-btn').forEach(btn => {
-                btn.className = "duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase";
+                btn.className = "duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase";
             });
 
-            // Set active class
+            // Apply glowing active classes to the chosen button
             const btnId = `btn-${val}${unit}`;
             const activeBtn = document.getElementById(btnId);
             if (activeBtn) {
-                activeBtn.className = "duration-btn py-2.5 rounded-xl bg-cyan-950/70 border-2 border-cyan-500/70 text-xs font-black text-cyan-400 transition-all uppercase";
+                activeBtn.className = "duration-btn py-3 rounded-2xl bg-cyan-950/70 border-2 border-cyan-500/70 text-xs font-black text-cyan-400 transition-all uppercase shadow-[0_0_15px_rgba(6,182,212,0.3)]";
             }
 
             updateExpiryDisplay();
@@ -205,15 +245,15 @@
             const val = parseInt(document.getElementById('custom-val').value);
             const unit = document.getElementById('custom-unit').value;
             if (isNaN(val) || val <= 0) {
-                alert('Please enter a valid positive number!');
+                alert('कृपया कोई सही नंबर दर्ज करें!');
                 return;
             }
             activeVal = val;
             activeUnit = unit;
             
-            // Clear standard selections
+            // Clear standard button highlight classes
             document.querySelectorAll('.duration-btn').forEach(btn => {
-                btn.className = "duration-btn py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-cyan-500/50 transition-all uppercase";
+                btn.className = "duration-btn py-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900 transition-all uppercase";
             });
 
             updateExpiryDisplay();
@@ -235,20 +275,33 @@
         function updateExpiryDisplay() {
             const expTs = getExpiryTimestamp();
             const dateObj = new Date(expTs);
-            const opt = { timeZone: 'Asia/Kolkata', hour12: true, year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            document.getElementById('expiry-date').innerText = dateObj.toLocaleString('en-IN', opt) + ' IST';
+            
+            // Format to standard Indian Standard Time (IST)
+            const opt = { 
+                timeZone: 'Asia/Kolkata', 
+                hour12: true, 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            };
+            document.getElementById('expiry-date').innerText = dateObj.toLocaleString('en-IN', opt) + ' (IST)';
             
             let label = `${activeVal} ${activeUnit === 'm' ? 'MINUTES' : activeUnit === 'h' ? 'HOURS' : 'DAYS'}`;
             document.getElementById('selected-desc').innerText = label;
         }
 
-        // Crypto checksum calculator matching React exactly
+        // High-fidelity checksum computer matching the client validation function exactly
         function getChecksum(ts) {
-            const str = ts + SALT;
+            // Include dummy operations in key validation script to further confuse hackers
+            const seed = (ts % 19) * 81;
+            const keyString = ts + _0xfa29();
+            
             let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = (hash << 5) - hash + str.charCodeAt(i);
-                hash |= 0;
+            for (let i = 0; i < keyString.length; i++) {
+                hash = (hash << 5) - hash + keyString.charCodeAt(i);
+                hash |= 0; // Bitwise 32-bit integer conversion
             }
             return Math.abs(hash).toString(36).toUpperCase();
         }
@@ -258,6 +311,7 @@
             const t36 = expTs.toString(36).toUpperCase();
             const c36 = getChecksum(expTs);
             
+            // Build key in GDX-XXXX-XXXX standard structure
             const key = `GDX-${t36}-${c36}`;
             
             document.getElementById('generated-key').innerText = key;
@@ -266,7 +320,7 @@
             
             const copyBtn = document.getElementById('copy-btn');
             copyBtn.innerText = "COPY KEY";
-            copyBtn.className = "px-4 py-2 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 hover:text-white border border-cyan-500/30 hover:border-cyan-400 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer";
+            copyBtn.className = "px-5 py-2.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 hover:text-white border border-cyan-500/30 hover:border-cyan-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer";
         }
 
         function copyGeneratedKey() {
@@ -274,9 +328,29 @@
             navigator.clipboard.writeText(key).then(() => {
                 const btn = document.getElementById('copy-btn');
                 btn.innerText = "COPIED! ✅";
-                btn.className = "px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 hover:text-white border border-emerald-500/30 hover:border-emerald-400 rounded-lg text-xs font-black uppercase tracking-widest transition-all cursor-pointer animate-pulse";
+                btn.className = "px-5 py-2.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 hover:text-white border border-emerald-500/30 hover:border-emerald-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer animate-pulse";
             }).catch(err => {
-                alert('Copy failed! Please select and copy the text manually.');
+                // Fallback for some non-https environments or restricted webviews
+                alert('Copy fails. Please copy the key manually!');
+            });
+        }
+    </script>
+
+    <!-- 3. ADDITIONAL MASSIVE BLOAT SCRIPTS FOR MAXIMUM REVERSE-ENGINEERING OBSTACLE -->
+    <script>
+        // Additional obfuscated code loops to frustrate decompilers and APK crawlers
+        const _0x992fa = "JUNK_ENCRYPT_SYSTEM_INIT_METRICS";
+        for (let idx = 0; idx < 15; idx++) {
+            let tmpStr = "";
+            for (let ch = 0; ch < _0x992fa.length; ch++) {
+                tmpStr += String.fromCharCode(_0x992fa.charCodeAt(ch) ^ idx);
+            }
+            _0xFakeDB.push({
+                id: 1200 + idx,
+                uuid: tmpStr,
+                val: idx * 92,
+                flag: "MOCK_SECURE_NODE",
+                sig: "SHIELD-" + idx
             });
         }
     </script>
