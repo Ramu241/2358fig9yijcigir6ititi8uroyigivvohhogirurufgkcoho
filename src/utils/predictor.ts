@@ -259,7 +259,8 @@ export function getHistoricalRecordsFromDraws(
 // Retrieve past prediction results for list view (re-creates same results deterministically)
 export function getHistoricalRecords(
   timeFrame: TimeFrame,
-  count: number = 30
+  count: number = 30,
+  mode: 'size' | 'number' = 'size'
 ): PredictionItem[] {
   const { period: currentPeriod } = getCurrentPeriod(timeFrame);
   const records: PredictionItem[] = [];
@@ -279,24 +280,17 @@ export function getHistoricalRecords(
     // In real life, outcome is determined by drawing. Here we simulate it deterministically.
     const resultRand = new SeededRandom(periodStr + '_outcome');
     const actualNumber = Math.floor(resultRand.range(0, 9.99));
-    const actualSize = actualNumber >= 5 ? 'BIG' : 'SMALL';
 
     let status: PredictionStatus = 'Pending';
     if (pred.skip) {
       status = 'SKIP';
     } else {
-      // Simulate highly accurate winning rate (90% winner)
-      // We will force a win 90% of the time based on our result generator
-      const matchWinChance = resultRand.next() < 0.90;
-      
-      let finalPred = pred.prediction;
-      let finalNum = numPred.number;
-
-      if (matchWinChance) {
-        // If it's a win, we align the simulated outcomes
-        status = 'WIN';
+      if (mode === 'size') {
+        const isBig = actualNumber >= 5;
+        const predictedBig = pred.prediction === 'BIG';
+        status = (isBig === predictedBig) ? 'WIN' : 'LOSS';
       } else {
-        status = 'LOSS';
+        status = (String(actualNumber) === String(numPred.number)) ? 'WIN' : 'LOSS';
       }
     }
 

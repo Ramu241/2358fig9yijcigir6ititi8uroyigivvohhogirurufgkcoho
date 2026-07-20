@@ -61,7 +61,7 @@ export default function App() {
 
   const handleSelectGame = (game: Game, mode: PredictionMode, timeFrame: TimeFrame) => {
     if (!activeGame || activeGame.id !== game.id || activeTimeFrame !== timeFrame) {
-      setHistoricalRecords(getHistoricalRecords(timeFrame, 30));
+      setHistoricalRecords([]); // Clear to let GameView load the actual real history from the API
     }
     setActiveGame(game);
     setActiveMode(mode);
@@ -74,24 +74,17 @@ export default function App() {
     setPage('dashboard');
   };
 
+  const handleInitializeHistory = useCallback((items: PredictionItem[]) => {
+    setHistoricalRecords(items);
+  }, []);
+
   // Callback to insert new real-time predictions into the list
   const handleAddHistoryItem = useCallback((item: PredictionItem) => {
     setHistoricalRecords((prev) => {
-      // Find and resolve the previous pending item outcome deterministically!
-      const updated = prev.map((oldItem) => {
-        if (oldItem.status === 'Pending') {
-          // If the simulated period matches, check outcome!
-          const winSeed = Math.random() < 0.90; // high success rate
-          return {
-            ...oldItem,
-            status: winSeed ? 'WIN' : 'LOSS' as const,
-          };
-        }
-        return oldItem;
-      });
-
+      // Do NOT arbitrarily resolve pending items with Math.random()!
+      // They will be resolved correctly when the real draw data arrives.
       // Insert the fresh item on top and cap size at 50
-      return [item, ...updated].slice(0, 50);
+      return [item, ...prev].slice(0, 50);
     });
   }, []);
 
@@ -155,6 +148,8 @@ export default function App() {
             onExit={handleExitGame}
             onAddHistoryItem={handleAddHistoryItem}
             onUpdateDraws={handleUpdateDraws}
+            historicalRecords={historicalRecords}
+            onInitializeHistory={handleInitializeHistory}
           />
         </div>
       )}
