@@ -71,13 +71,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Premium game configurations with the explicit user links mapped!
   const premiumGames: Game[] = [
     {
-      id: '6club',
-      name: '6CLUB GAME',
-      url: 'https://www.6clubt.com/#/register?invitationCode=284765714372',
-      logo: 'https://image2url.com/r2/default/images/1770538182409-884f52c3-a8d4-45c1-9a70-0037abafa4c8.jpg',
-      tag: 'Deep Pattern Sync'
-    },
-    {
       id: 'bdgwin',
       name: 'BDG WIN',
       url: 'https://bdgwinmy.cc/#/register?invitationCode=8261315097340',

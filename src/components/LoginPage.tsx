@@ -22,6 +22,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       localStorage.setItem('fusion_device_id', storedId);
     }
     setDeviceId(storedId);
+
+    // Read and display auto-logout or expiration error if present
+    const autoErr = localStorage.getItem('fusion_login_error');
+    if (autoErr) {
+      setError(autoErr);
+      localStorage.removeItem('fusion_login_error');
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,24 +48,73 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    // Check allowed passwords: godxgoku.predictor, godxgoku, goku, wpzbxk25exzjmty1, https://t.me/+wpzbxk25exzjmty1
-    const allowed = [
-      'godxgoku.predictor',
-      'godxgoku',
-      'goku',
-      'wpzbxk25exzjmty1',
-      'https://t.me/+wpzbxk25exzjmty1',
-      '+wpzbxk25exzjmty1'
-    ];
+    const SALT = "godxgoku_secret_salt";
+    const getChecksum = (ts: number) => {
+      const str = ts + SALT;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash).toString(36).toUpperCase();
+    };
+
+    const verifyKey = (k: string): { valid: boolean; expiresAt?: string; expiryTs?: number; error?: string } => {
+      const ck = k.trim().toUpperCase();
+      const overrides = [
+        'GODXGOKU.PREDICTOR',
+        'GODXGOKU',
+        'ADMIN',
+        'GOKU',
+        'WPZBXK25EXZJMTY1',
+        '+WPZBXK25EXZJMTY1'
+      ];
+      if (overrides.some(o => ck.includes(o))) {
+        // Return a timestamp representing 100 years in the future for lifetime keys
+        return { valid: true, expiresAt: 'LIFETIME (OWNER OVERRIDE)', expiryTs: Date.now() + 100 * 365 * 24 * 60 * 60 * 1000 };
+      }
+
+      const parts = ck.split('-');
+      if (parts.length !== 3 || parts[0] !== 'GDX') {
+        return { valid: false, error: 'INVALID FORMAT! USE GDX-XXXXXX-XXXXX KEY' };
+      }
+
+      const t36 = parts[1];
+      const c36 = parts[2];
+      const ts = parseInt(t36, 36);
+
+      if (isNaN(ts)) {
+        return { valid: false, error: 'INVALID KEY CODE!' };
+      }
+
+      if (c36 !== getChecksum(ts)) {
+        return { valid: false, error: 'LICENSE KEY FALSIFIED OR TAMPERED!' };
+      }
+
+      if (ts < Date.now()) {
+        return { valid: false, error: 'THIS LICENSE KEY HAS EXPIRED!' };
+      }
+
+      const dateStr = new Date(ts).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+      return { valid: true, expiresAt: dateStr + ' (IST)', expiryTs: ts };
+    };
 
     setIsLoading(true);
 
     setTimeout(() => {
       setIsLoading(false);
-      if (allowed.some(p => cleanPass.includes(p)) || cleanPass === 'admin') {
+      const res = verifyKey(cleanPass);
+      if (res.valid) {
+        // Save expiration time description in localstorage for settings view
+        localStorage.setItem('fusion_license_expiry', res.expiresAt || 'LIFETIME');
+        if (res.expiryTs) {
+          localStorage.setItem('fusion_license_expiry_ts', String(res.expiryTs));
+        } else {
+          localStorage.setItem('fusion_license_expiry_ts', String(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000));
+        }
         onLoginSuccess(cleanUser);
       } else {
-        setError('INVALID LICENSE KEY! JOIN OUR TELEGRAM CHANNEL TO GET THE PASSWORD.');
+        setError(res.error || 'INVALID LICENSE KEY! GET A VALID KEY FROM THE ADMIN PANEL.');
       }
     }, 1500);
   };

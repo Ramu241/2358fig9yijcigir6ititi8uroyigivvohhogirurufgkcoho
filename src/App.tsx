@@ -27,6 +27,20 @@ export default function App() {
     const savedTheme = localStorage.getItem('fusion_theme_id') as ThemeId;
 
     if (savedUser) {
+      // Check expiration on startup
+      const expiryTsStr = localStorage.getItem('fusion_license_expiry_ts');
+      if (expiryTsStr) {
+        const expiryTs = parseInt(expiryTsStr, 10);
+        if (!isNaN(expiryTs) && expiryTs < Date.now()) {
+          // Expired! Clear everything and go to login
+          localStorage.removeItem('fusion_username');
+          localStorage.removeItem('fusion_license_expiry');
+          localStorage.removeItem('fusion_license_expiry_ts');
+          localStorage.setItem('fusion_login_error', 'YOUR LICENSE HAS EXPIRED! PLEASE ENTER A NEW KEY.');
+          setPage('login');
+          return;
+        }
+      }
       setUsername(savedUser);
       setPage('dashboard');
     }
@@ -52,12 +66,33 @@ export default function App() {
     setPage('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setUsername('');
     setActiveGame(null);
     localStorage.removeItem('fusion_username');
+    localStorage.removeItem('fusion_license_expiry');
+    localStorage.removeItem('fusion_license_expiry_ts');
     setPage('login');
-  };
+  }, []);
+
+  // Continuously check license expiration when logged in
+  useEffect(() => {
+    if (page === 'landing' || page === 'login') return;
+
+    const interval = setInterval(() => {
+      const expiryTsStr = localStorage.getItem('fusion_license_expiry_ts');
+      if (expiryTsStr) {
+        const expiryTs = parseInt(expiryTsStr, 10);
+        if (!isNaN(expiryTs) && expiryTs < Date.now()) {
+          // Store error message so LoginPage can retrieve it and display it
+          localStorage.setItem('fusion_login_error', 'YOUR LICENSE HAS EXPIRED! GET A NEW KEY.');
+          handleLogout();
+        }
+      }
+    }, 1000); // Check every 1 second for precision
+
+    return () => clearInterval(interval);
+  }, [page, handleLogout]);
 
   const handleSelectGame = (game: Game, mode: PredictionMode, timeFrame: TimeFrame) => {
     if (!activeGame || activeGame.id !== game.id || activeTimeFrame !== timeFrame) {

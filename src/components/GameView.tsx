@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Game, PredictionItem, PredictionMode, TimeFrame } from '../types';
 import { getCurrentPeriod, getPredictionForPeriod, formatPeriodMasked, fetchRealTimeDraws, getHistoricalRecordsFromDraws } from '../utils/predictor';
-import { Eye, EyeOff, LogOut, Sparkles, TrendingUp, AlertTriangle, Wallet, Award, RotateCcw, Copy, Check } from 'lucide-react';
+import { Eye, EyeOff, LogOut, Sparkles, TrendingUp, AlertTriangle, Wallet, Award, RotateCcw, Copy, Check, BarChart2 } from 'lucide-react';
+import { playWinSound, playLossSound } from '../utils/audio';
 
 const IMG_SMALL = 'https://image2url.com/r2/default/images/1770189526625-c1b6c510-cf81-4589-a305-86430a66146a.png';
 const IMG_BIG = 'https://image2url.com/r2/default/images/1770190123131-24e81887-a75f-4cd8-aa8f-de3b3e9b4468.png';
@@ -73,6 +74,7 @@ export const GameView: React.FC<GameViewProps> = ({
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isChallengeOpen, setIsChallengeOpen] = useState(false);
   
   // Current prediction state
   const [prediction, setPrediction] = useState<'BIG' | 'SMALL' | 'SKIP'>('SKIP');
@@ -193,6 +195,12 @@ export const GameView: React.FC<GameViewProps> = ({
   const resolveBet = (won: boolean, targetPeriod: string, levelForBet: number | null) => {
     const betLvl = levelForBet || challengeLevel;
     const currentStake = LEVEL_STAKES[betLvl - 1] || 10;
+    
+    if (won) {
+      playWinSound();
+    } else {
+      playLossSound();
+    }
     
     setChallengeCapital((prev) => {
       let nextCapital = prev;
@@ -640,198 +648,27 @@ export const GameView: React.FC<GameViewProps> = ({
             )}
           </div>
 
-          {/* ================= 💰 500 TO 1K TARGET CHALLENGE ================= */}
-          <div className="rounded-xl bg-slate-950/95 border border-cyan-500/25 p-3 flex flex-col gap-2 relative">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black text-cyan-400 tracking-wider flex items-center gap-1 uppercase">
-                <Award className="w-3.5 h-3.5 text-cyan-400" />
-                500 TO 1K CHALLENGE
-              </span>
-              <button 
-                onClick={() => {
-                  if (window.confirm("क्या आप चैलेंज को ₹500 पर रिसेट करना चाहते हैं?")) {
-                    setChallengeCapital(500);
-                    setChallengeLevel(1);
-                    setChallengeHistory([]);
-                    setPendingBetPeriod(null);
-                    setPendingBetPred(null);
-                    setPendingBetLevel(null);
-                  }
-                }}
-                className="p-1 rounded bg-slate-900 border border-slate-800 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-colors"
-                title="Reset Challenge"
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Capital Progress Bar */}
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col gap-1.5">
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-slate-400 font-bold flex items-center gap-1">
-                  <Wallet className="w-3.5 h-3.5 text-emerald-400" />
-                  Capital: <span className="text-white font-mono font-bold">₹{challengeCapital}</span>
-                </span>
-                
-                <button
-                  onClick={() => {
-                    setChallengeCapital((prev) => prev + 500);
-                  }}
-                  className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900 text-[8px] font-black tracking-wider uppercase transition-colors"
-                >
-                  + Add ₹500
-                </button>
-              </div>
-              
-              {/* Progress visual bar */}
-              <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                <div 
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, Math.max(0, ((challengeCapital - 500) / 500) * 100))}%` }}
-                />
-              </div>
-
-              {challengeCapital >= 1000 ? (
-                <div className="text-center text-[9px] font-black text-emerald-400 animate-bounce bg-emerald-950/40 py-1 rounded border border-emerald-500/20 uppercase mt-0.5">
-                  🎉 TARGET COMPLETED! 👍 WINNING BOOM!
-                </div>
-              ) : challengeCapital <= 0 ? (
-                <div className="flex flex-col gap-1.5 mt-0.5">
-                  <div className="text-center text-[9px] font-black text-red-400 bg-red-950/40 py-1 rounded border border-red-500/20 uppercase">
-                    ⚠️ CAPITAL BROKEN! (₹0)
-                  </div>
-                  <button
-                    onClick={() => {
-                      setChallengeCapital(500);
-                      setChallengeLevel(1);
-                      setChallengeHistory([]);
-                      setPendingBetPeriod(null);
-                      setPendingBetPred(null);
-                      setPendingBetLevel(null);
-                    }}
-                    className="w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 cursor-pointer transition-all"
-                  >
-                    <Wallet className="w-3.5 h-3.5" />
-                    RECHARGE WALLET (₹500)
-                  </button>
-                </div>
-              ) : (
-                <div className="flex justify-between text-[8px] text-slate-500 font-semibold uppercase">
-                  <span>Start: ₹500</span>
-                  <span>Progress: {Math.floor(Math.min(100, Math.max(0, ((challengeCapital - 500) / 500) * 100)))}%</span>
-                </div>
-              )}
-            </div>
-
-            {/* Current Level Bet Details */}
-            {challengeCapital > 0 && challengeCapital < 1000 && (
-              <div className="grid grid-cols-2 gap-1.5 bg-slate-900/40 rounded-lg p-2 border border-slate-900">
-                <div className="flex flex-col justify-center">
-                  <span className="text-[7.5px] text-slate-400 font-black tracking-wider uppercase">Active Stake</span>
-                  <div className="flex flex-col mt-0.5">
-                    <span className="text-xs font-black text-white font-mono flex items-center gap-1">
-                      ₹{LEVEL_STAKES[challengeLevel - 1] || 10}
-                      <span className="text-[7px] text-cyan-400 font-extrabold font-sans bg-cyan-950/50 px-1 py-0.5 rounded border border-cyan-500/10">
-                        Lvl {challengeLevel}
-                      </span>
-                    </span>
-                    <span className="text-[8px] text-emerald-400 font-extrabold mt-0.5">
-                      (₹{LEVEL_STAKES[challengeLevel - 1] || 10} का ₹{(LEVEL_STAKES[challengeLevel - 1] || 10) * 2} WIN)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Quick Copy Signal Box */}
-                <button
-                  onClick={handleCopySignal}
-                  className="flex items-center justify-center gap-1 bg-cyan-950/30 hover:bg-cyan-950/60 active:scale-95 border border-cyan-500/35 rounded-lg text-[9px] font-black tracking-widest text-cyan-300 uppercase py-1 cursor-pointer transition-all self-center"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                      COPIED! ✅
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      COPY SIGNAL
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Manual Controls Panel */}
-            {challengeCapital > 0 && challengeCapital < 1000 && (
-              <div className="flex flex-col gap-1 bg-slate-900/60 rounded-lg p-2 border border-slate-900/80">
-                <div className="text-[7.5px] text-slate-400 font-black tracking-widest uppercase mb-1 text-center">
-                  {pendingBetPeriod ? (
-                    <span className="text-cyan-400 flex items-center justify-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                      Auto-tracking period: {formatPeriodMasked(pendingBetPeriod)} ({pendingBetPred})
-                    </span>
-                  ) : (
-                    "Manual Win / Loss Log"
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    onClick={() => {
-                      resolveBet(true, period, challengeLevel);
-                    }}
-                    className="py-1.5 rounded bg-emerald-950/50 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
-                  >
-                    ✅ WIN
-                  </button>
-                  <button
-                    onClick={() => {
-                      resolveBet(false, period, challengeLevel);
-                    }}
-                    className="py-1.5 rounded bg-red-950/50 hover:bg-red-950 border border-red-500/40 text-red-400 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
-                  >
-                    ❌ LOSS
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Streak History Details - Collapsible */}
-            <div className="flex flex-col gap-1 border-t border-slate-900/50 pt-2 mt-0.5">
+            {/* Beautiful, Prominent COPY SIGNAL Button inside Main Panel */}
+            <div className="px-1 py-0.5">
               <button
-                onClick={() => setShowHistory(prev => !prev)}
-                className="w-full py-1 rounded bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 text-[8px] font-black tracking-widest text-slate-400 hover:text-cyan-400 uppercase flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                onClick={handleCopySignal}
+                className="w-full flex items-center justify-center gap-1.5 bg-cyan-950/40 hover:bg-cyan-950/80 active:scale-95 border-2 border-cyan-500/35 rounded-xl text-[10px] font-black tracking-widest text-cyan-300 uppercase py-2.5 cursor-pointer transition-all shadow-md"
               >
-                📊 {showHistory ? "HIDE HISTORY" : "SHOW HISTORY"}
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400 animate-pulse" />
+                    COPIED! ✅
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    COPY SIGNAL
+                  </>
+                )}
               </button>
-
-              {showHistory && (
-                <div className="flex flex-col gap-1 mt-1 select-none animate-fade-in">
-                  <span className="text-[7.5px] text-slate-400 font-black tracking-widest uppercase">
-                    Challenge Streak History
-                  </span>
-                  <div className="flex flex-wrap gap-1 min-h-[22px] max-h-24 overflow-y-auto p-1.5 rounded bg-slate-950 border border-slate-900/80 items-center justify-start">
-                    {challengeHistory.length > 0 ? (
-                      challengeHistory.map((log, idx) => (
-                        <div 
-                          key={idx} 
-                          className="flex items-center gap-0.5 bg-slate-900 border border-slate-800/60 px-1 py-0.5 rounded text-[8px] font-semibold text-slate-300 select-none"
-                          title={`Period: ${log.period} | Level: ${log.level} | Stake: ₹${log.stake} | Balance: ₹${log.capital}`}
-                        >
-                          <span>{log.status === 'WIN' ? '🟢' : '🔴'}</span>
-                          <span className="font-mono text-[7px] text-slate-400">₹{log.stake}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-[7px] text-slate-500 tracking-wider font-bold uppercase italic">
-                        No History Yet
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+
+          <div className="grid grid-cols-2 gap-2 mt-1">
             <button
               onClick={handleExit}
               className="py-3 rounded-lg border border-red-500/25 bg-red-950/10 hover:bg-red-950/20 active:scale-95 text-[10px] font-black tracking-widest text-red-400 uppercase flex items-center justify-center gap-1 cursor-pointer transition-all"
@@ -849,6 +686,204 @@ export const GameView: React.FC<GameViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ================= 💰 SEPARATE FLOATING TARGET CHALLENGE PANEL ================= */}
+      {isChallengeOpen && (
+        <div 
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3000] w-[270px] bg-slate-950/98 backdrop-blur-md border border-amber-500/50 rounded-2xl shadow-[0_15px_35px_rgba(245,158,11,0.25)] p-3 flex flex-col gap-3 max-h-[96vh] overflow-y-auto select-none text-white transition-all duration-300"
+        >
+          <div className="flex items-center justify-between border-b border-slate-900 pb-1.5">
+            <span className="text-[10px] font-black text-amber-400 tracking-wider flex items-center gap-1 uppercase">
+              <Award className="w-4 h-4 text-amber-400" />
+              CHALLENGE CONSOLE
+            </span>
+            <button 
+              onClick={() => setIsChallengeOpen(false)}
+              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400 text-[9px] font-black px-2 py-0.5 uppercase transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Capital Progress Bar */}
+          <div className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-2">
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-slate-400 font-bold flex items-center gap-1">
+                <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+                Capital: <span className="text-white font-mono font-bold">₹{challengeCapital}</span>
+              </span>
+              
+              <button
+                onClick={() => {
+                  setChallengeCapital((prev) => prev + 500);
+                }}
+                className="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900 text-[8px] font-black tracking-wider uppercase transition-colors cursor-pointer"
+              >
+                + Add ₹500
+              </button>
+            </div>
+            
+            {/* Progress visual bar */}
+            <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+              <div 
+                className="bg-gradient-to-r from-emerald-500 to-amber-400 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${Math.min(100, Math.max(0, ((challengeCapital - 500) / 500) * 100))}%` }}
+              />
+            </div>
+
+            {challengeCapital >= 1000 ? (
+              <div className="text-center text-[9px] font-black text-emerald-400 animate-bounce bg-emerald-950/40 py-1 rounded border border-emerald-500/20 uppercase mt-0.5">
+                🎉 TARGET COMPLETED! 👍 WINNING BOOM!
+              </div>
+            ) : challengeCapital <= 0 ? (
+              <div className="flex flex-col gap-1.5 mt-0.5">
+                <div className="text-center text-[9px] font-black text-red-400 bg-red-950/40 py-1 rounded border border-red-500/20 uppercase">
+                  ⚠️ CAPITAL BROKEN! (₹0)
+                </div>
+                <button
+                  onClick={() => {
+                    setChallengeCapital(500);
+                    setChallengeLevel(1);
+                    setChallengeHistory([]);
+                    setPendingBetPeriod(null);
+                    setPendingBetPred(null);
+                    setPendingBetLevel(null);
+                  }}
+                  className="w-full py-1.5 rounded bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 cursor-pointer transition-all"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  RECHARGE WALLET (₹500)
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-between text-[8px] text-slate-500 font-semibold uppercase">
+                <span>Start: ₹500</span>
+                <span>Progress: {Math.floor(Math.min(100, Math.max(0, ((challengeCapital - 500) / 500) * 100)))}%</span>
+              </div>
+            )}
+          </div>
+
+          {/* Current Level Bet Details */}
+          {challengeCapital > 0 && challengeCapital < 1000 && (
+            <div className="flex flex-col gap-1 bg-slate-900/40 rounded-lg p-2 border border-slate-900">
+              <span className="text-[7.5px] text-slate-400 font-black tracking-wider uppercase">Active Stake Amount</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-white font-mono flex items-center gap-1.5">
+                  ₹{LEVEL_STAKES[challengeLevel - 1] || 10}
+                  <span className="text-[7px] text-amber-400 font-extrabold font-sans bg-amber-950/50 px-1 py-0.5 rounded border border-amber-500/10">
+                    Lvl {challengeLevel}
+                  </span>
+                </span>
+                <span className="text-[8px] text-emerald-400 font-extrabold">
+                  (₹{LEVEL_STAKES[challengeLevel - 1] || 10} ➔ ₹{(LEVEL_STAKES[challengeLevel - 1] || 10) * 2} WIN)
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Controls Panel */}
+          {challengeCapital > 0 && challengeCapital < 1000 && (
+            <div className="flex flex-col gap-1.5 bg-slate-900/60 rounded-lg p-2 border border-slate-900/80">
+              <div className="text-[7.5px] text-slate-400 font-black tracking-widest uppercase text-center">
+                {pendingBetPeriod ? (
+                  <span className="text-amber-400 flex items-center justify-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    Auto-tracking: {formatPeriodMasked(pendingBetPeriod)} ({pendingBetPred})
+                  </span>
+                ) : (
+                  "Manual Win / Loss Log"
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => {
+                    resolveBet(true, period, challengeLevel);
+                  }}
+                  className="py-1.5 rounded bg-emerald-950/50 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-400 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+                >
+                  ✅ WIN
+                </button>
+                <button
+                  onClick={() => {
+                    resolveBet(false, period, challengeLevel);
+                  }}
+                  className="py-1.5 rounded bg-red-950/50 hover:bg-red-950 border border-red-500/40 text-red-400 text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+                >
+                  ❌ LOSS
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Streak History Details */}
+          <div className="flex flex-col gap-1 border-t border-slate-900/50 pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">Streak Log History</span>
+              <button 
+                onClick={() => {
+                  if (window.confirm("क्या आप चुनौती इतिहास को पूरी तरह मिटाना चाहते हैं?")) {
+                    setChallengeHistory([]);
+                  }
+                }}
+                className="text-[7.5px] text-red-400 hover:text-red-300 uppercase font-black cursor-pointer"
+              >
+                Clear History
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1 min-h-[22px] max-h-24 overflow-y-auto p-1.5 rounded bg-slate-950 border border-slate-900/80 items-center justify-start">
+              {challengeHistory.length > 0 ? (
+                challengeHistory.map((log, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-0.5 bg-slate-900 border border-slate-800/60 px-1 py-0.5 rounded text-[8px] font-semibold text-slate-300 select-none"
+                    title={`Period: ${log.period} | Level: ${log.level} | Stake: ₹${log.stake} | Balance: ₹${log.capital}`}
+                  >
+                    <span>{log.status === 'WIN' ? '🟢' : '🔴'}</span>
+                    <span className="font-mono text-[7px] text-slate-400">₹{log.stake}</span>
+                  </div>
+                ))
+              ) : (
+                <span className="text-[7px] text-slate-500 tracking-wider font-bold uppercase italic mx-auto">
+                  No Streak Log Recorded
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Reset Action */}
+          <button 
+            onClick={() => {
+              if (window.confirm("क्या आप चैलेंज को ₹500 पर रिसेट करना चाहते हैं?")) {
+                setChallengeCapital(500);
+                setChallengeLevel(1);
+                setChallengeHistory([]);
+                setPendingBetPeriod(null);
+                setPendingBetPred(null);
+                setPendingBetLevel(null);
+              }
+            }}
+            className="w-full py-2 bg-slate-900 hover:bg-slate-900/80 border border-slate-800 hover:border-red-500/20 rounded-lg text-[9px] font-black text-slate-400 hover:text-red-400 tracking-widest uppercase transition-colors cursor-pointer"
+          >
+            Reset Entire Challenge
+          </button>
+        </div>
+      )}
+
+      {/* ================= FLOATING ACTION BUTTONS FOR DRAGGABLE OVERLAYS ================= */}
+      <div className="fixed right-4 bottom-24 z-[2500] flex flex-col gap-2.5">
+        {/* Toggle Challenge Panel Button */}
+        <button
+          onClick={() => setIsChallengeOpen(prev => !prev)}
+          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 cursor-pointer border-2 hover:scale-105 active:scale-95 ${
+            isChallengeOpen 
+              ? 'bg-amber-500 text-slate-950 border-white' 
+              : 'bg-slate-950/95 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+          }`}
+          title="Open Challenge & Log Tracker"
+        >
+          <BarChart2 className="w-5 h-5" />
+        </button>
+      </div>
     </div>
   );
 };
