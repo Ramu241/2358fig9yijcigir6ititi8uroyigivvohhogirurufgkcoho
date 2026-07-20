@@ -254,7 +254,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             Active Security Protection
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Without the valid license password, the analyzer cannot calibrate. Enter <span className="text-amber-300 font-bold">GODXGOKU.PREDICTOR</span> to unlock instant access.
+            Without a valid license password, the analyzer cannot calibrate. Enter a valid license key generated from the admin console to unlock access.
           </p>
           <div className="mt-3 pt-2.5 border-t border-amber-500/5 flex items-center justify-between text-[8px] text-slate-500 tracking-wider uppercase">
             <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> SYSTEM LOCKED</span>
