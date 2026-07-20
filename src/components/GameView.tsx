@@ -42,6 +42,7 @@ interface GameViewProps {
   timeFrame: TimeFrame;
   onExit: () => void;
   onAddHistoryItem: (item: PredictionItem) => void;
+  onUpdateDraws: (drawsList: any[]) => void;
 }
 
 export const GameView: React.FC<GameViewProps> = ({
@@ -50,6 +51,7 @@ export const GameView: React.FC<GameViewProps> = ({
   timeFrame,
   onExit,
   onAddHistoryItem,
+  onUpdateDraws,
 }) => {
   const [period, setPeriod] = useState('SYNCING...');
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -62,6 +64,7 @@ export const GameView: React.FC<GameViewProps> = ({
   const [predictedNumber, setPredictedNumber] = useState<string | number>('⚠');
   const [confidence, setConfidence] = useState(90);
   const [skip, setSkip] = useState(true);
+  const [patternName, setPatternName] = useState('Algorithm Wave Sync');
 
   // Floating bubble position state
   const [bubblePos, setBubblePos] = useState({ x: 20, y: 150 });
@@ -83,6 +86,11 @@ export const GameView: React.FC<GameViewProps> = ({
           setPeriod(currPeriod);
           setSecondsLeft(secLeft);
 
+          // Update outcomes of any pending predictions using the real list of draws!
+          if (list && list.length > 0) {
+            onUpdateDraws(list);
+          }
+
           // Trigger prediction calculation for the upcoming period
           if (currPeriod !== lastProcessedPeriod) {
             lastProcessedPeriod = currPeriod;
@@ -90,12 +98,15 @@ export const GameView: React.FC<GameViewProps> = ({
 
             setTimeout(() => {
               setIsAnalyzing(false);
-              const result = getPredictionForPeriod(currPeriod, mode);
+              const result = getPredictionForPeriod(currPeriod, mode, list);
               
               setPrediction(result.prediction);
               setPredictedNumber(result.number);
               setConfidence(result.confidence);
               setSkip(result.skip);
+              if (result.patternName) {
+                setPatternName(result.patternName);
+              }
 
               // Build a history prediction item to feed back to dashboard stats
               const historyItem: PredictionItem = {
@@ -146,7 +157,7 @@ export const GameView: React.FC<GameViewProps> = ({
       clearInterval(timerId);
       clearInterval(syncId);
     };
-  }, [timeFrame, mode, onAddHistoryItem]);
+  }, [timeFrame, mode, onAddHistoryItem, onUpdateDraws]);
 
   // Pointer drag event handlers for floating bubble widget
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -328,6 +339,13 @@ export const GameView: React.FC<GameViewProps> = ({
                             </div>
                           </div>
                         </div>
+                        {patternName && (
+                          <div className="mt-1.5 bg-emerald-950/40 border border-emerald-500/20 rounded px-2.5 py-0.5">
+                            <span className="text-[8px] font-black tracking-widest text-emerald-400 uppercase">
+                              Trend: {patternName}
+                            </span>
+                          </div>
+                        )}
                         <span className="text-[7.5px] font-bold tracking-wider text-slate-400 uppercase mt-1.5">
                           Calculated Pattern Signal & Target Suggestions
                         </span>
@@ -344,6 +362,13 @@ export const GameView: React.FC<GameViewProps> = ({
                         ) : (
                           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black text-white shadow-lg" style={{ background: 'linear-gradient(to bottom right, var(--primary), #4f46e5)', borderColor: 'rgba(var(--primary-rgb), 0.2)' }}>
                             {predictedNumber}
+                          </div>
+                        )}
+                        {patternName && (
+                          <div className="mt-1.5 bg-emerald-950/40 border border-emerald-500/20 rounded px-2.5 py-0.5">
+                            <span className="text-[8px] font-black tracking-widest text-emerald-400 uppercase">
+                              Trend: {patternName}
+                            </span>
                           </div>
                         )}
                         <span className="text-[7.5px] font-bold tracking-wider text-slate-400 uppercase mt-0.5">

@@ -83,26 +83,28 @@ class SeededRandom {
 // Get formatted period code based on current date and time
 export function getCurrentPeriod(timeFrame: TimeFrame): { period: string; secondsLeft: number } {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const date = String(now.getDate()).padStart(2, '0');
+  
+  // Use UTC to align with the Wingo server exactly!
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const date = String(now.getUTCDate()).padStart(2, '0');
   const dateStr = `${year}${month}${date}`;
 
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
+  const hours = now.getUTCHours();
+  const minutes = now.getUTCMinutes();
+  const seconds = now.getUTCSeconds();
 
   if (timeFrame === '1m') {
     const totalMinutes = hours * 60 + minutes;
-    const periodIndex = 1000 + totalMinutes;
-    const period = `${dateStr}${periodIndex}`;
+    const periodIndex = totalMinutes + 1; // 1-indexed
+    const period = `${dateStr}10001${String(periodIndex).padStart(4, '0')}`;
     const secondsLeft = 60 - seconds;
     return { period, secondsLeft };
   } else {
     // 30s timeframe
     const totalHalfMinutes = (hours * 60 + minutes) * 2 + (seconds >= 30 ? 1 : 0);
-    const periodIndex = 2000 + totalHalfMinutes;
-    const period = `${dateStr}${periodIndex}`;
+    const periodIndex = totalHalfMinutes + 1; // 1-indexed
+    const period = `${dateStr}10005${String(periodIndex).padStart(4, '0')}`;
     const secondsLeft = seconds >= 30 ? 60 - seconds : 30 - seconds;
     return { period, secondsLeft };
   }
@@ -117,38 +119,100 @@ export function formatPeriodMasked(periodStr: string): string {
 // Run the prediction engine on a specific period code
 export function getPredictionForPeriod(
   periodStr: string,
-  mode: 'size' | 'number'
-): { prediction: 'BIG' | 'SMALL' | 'SKIP'; number: string | number; confidence: number; skip: boolean } {
+  mode: 'size' | 'number',
+  recentDraws?: RealTimeWingoDraw[]
+): {
+  prediction: 'BIG' | 'SMALL' | 'SKIP';
+  number: string | number;
+  confidence: number;
+  skip: boolean;
+  patternName?: string;
+} {
   const rand = new SeededRandom(periodStr);
 
-  // 1. Check for skip (Disabled by user request - never skip a period!)
-  const isSkip = false;
-  if (isSkip) {
-    return {
-      prediction: 'SKIP',
-      number: '⚠',
-      confidence: Math.floor(rand.range(30, 45)),
-      skip: true,
-    };
-  }
-
-  // 2. Generate Prediction based on seed
-  const prediction: 'BIG' | 'SMALL' = rand.next() >= 0.5 ? 'BIG' : 'SMALL';
-  
+  // Default deterministic values (fallback)
+  let prediction: 'BIG' | 'SMALL' = rand.next() >= 0.5 ? 'BIG' : 'SMALL';
   let number: number;
   if (prediction === 'BIG') {
     number = Math.floor(rand.range(5, 9.99));
   } else {
     number = Math.floor(rand.range(0, 4.99));
   }
+  let confidence = Math.floor(rand.range(88, 99));
+  let patternName = 'Algorithm Wave Sync';
 
-  const confidence = Math.floor(rand.range(88, 99));
+  // If we have recent draws, analyze the actual real-world pattern!
+  if (recentDraws && recentDraws.length >= 3) {
+    const lastSizes = recentDraws.slice(0, 5).map((d) => (d.number >= 5 ? 'BIG' : 'SMALL'));
+
+    // 1. Dragon Pattern (3 or more consecutive identical outcomes)
+    if (lastSizes.length >= 3 && lastSizes[0] === lastSizes[1] && lastSizes[1] === lastSizes[2]) {
+      prediction = lastSizes[0];
+      patternName = `Dragon Trend (${prediction})`;
+      confidence = Math.floor(rand.range(91, 98));
+      
+      // Select a matching frequent number for this size
+      const sameSizeNums = recentDraws
+        .filter((d) => (prediction === 'BIG' ? d.number >= 5 : d.number < 5))
+        .map((d) => d.number);
+      if (sameSizeNums.length > 0) {
+        // Frequency check
+        const counts: { [key: number]: number } = {};
+        sameSizeNums.forEach((n) => { counts[n] = (counts[n] || 0) + 1; });
+        let bestNum = sameSizeNums[0];
+        let maxC = 0;
+        for (const n in counts) {
+          if (counts[n] > maxC) {
+            maxC = counts[n];
+            bestNum = parseInt(n);
+          }
+        }
+        number = bestNum;
+      } else {
+        number = prediction === 'BIG' ? Math.floor(rand.range(5, 9.99)) : Math.floor(rand.range(0, 4.99));
+      }
+    }
+    // 2. Alternating Pattern (V-Curve, e.g. B-S-B-S)
+    else if (
+      lastSizes.length >= 4 &&
+      lastSizes[0] !== lastSizes[1] &&
+      lastSizes[1] !== lastSizes[2] &&
+      lastSizes[2] !== lastSizes[3]
+    ) {
+      prediction = lastSizes[0] === 'BIG' ? 'SMALL' : 'BIG';
+      patternName = `Alternating V-Curve (${prediction})`;
+      confidence = Math.floor(rand.range(89, 96));
+      number = prediction === 'BIG' ? Math.floor(rand.range(5, 9.99)) : Math.floor(rand.range(0, 4.99));
+    }
+    // 3. Doublet Pattern (AABB -> AA BB)
+    else if (
+      lastSizes.length >= 4 &&
+      lastSizes[0] === lastSizes[1] &&
+      lastSizes[2] === lastSizes[3] &&
+      lastSizes[1] !== lastSizes[2]
+    ) {
+      prediction = lastSizes[0] === 'BIG' ? 'SMALL' : 'BIG';
+      patternName = `Doublet Shift (${prediction})`;
+      confidence = Math.floor(rand.range(87, 94));
+      number = prediction === 'BIG' ? Math.floor(rand.range(5, 9.99)) : Math.floor(rand.range(0, 4.99));
+    }
+    // 4. Volume Momentum (Majoritarian)
+    else {
+      const recentSubset = recentDraws.slice(0, 10);
+      const bigCount = recentSubset.filter((d) => d.number >= 5).length;
+      prediction = bigCount >= 5 ? 'BIG' : 'SMALL';
+      patternName = `Volume Momentum (${prediction})`;
+      confidence = Math.floor(rand.range(85, 92));
+      number = prediction === 'BIG' ? Math.floor(rand.range(5, 9.99)) : Math.floor(rand.range(0, 4.99));
+    }
+  }
 
   return {
     prediction,
     number,
     confidence,
     skip: false,
+    patternName,
   };
 }
 
@@ -161,8 +225,10 @@ export function getHistoricalRecordsFromDraws(
     const periodStr = draw.issueNumber;
     const actualNumber = draw.number;
 
-    const pred = getPredictionForPeriod(periodStr, 'size');
-    const numPred = getPredictionForPeriod(periodStr, 'number');
+    // Use only older draws as background context to simulate a real historical trend analysis
+    const contextDraws = draws.slice(index + 1);
+    const pred = getPredictionForPeriod(periodStr, 'size', contextDraws);
+    const numPred = getPredictionForPeriod(periodStr, 'number', contextDraws);
 
     let status: PredictionStatus = 'Pending';
     if (pred.skip) {

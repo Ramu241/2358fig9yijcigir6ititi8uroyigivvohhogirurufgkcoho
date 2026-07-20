@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PageId, Game, PredictionMode, TimeFrame, ThemeId, PredictionItem } from './types';
+import { PageId, Game, PredictionMode, TimeFrame, ThemeId, PredictionItem, PredictionStatus } from './types';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
@@ -95,6 +95,35 @@ export default function App() {
     });
   }, []);
 
+  const handleUpdateDraws = useCallback((drawsList: any[]) => {
+    setHistoricalRecords((prev) => {
+      let changed = false;
+      const updated = prev.map((oldItem) => {
+        if (oldItem.status === 'Pending') {
+          const matchingDraw = drawsList.find((d) => String(d.issueNumber) === String(oldItem.fullPeriod));
+          if (matchingDraw) {
+            changed = true;
+            const actualNumber = matchingDraw.number;
+            let status: PredictionStatus = 'Pending';
+            if (activeMode === 'size') {
+              const isBig = actualNumber >= 5;
+              const predictedBig = oldItem.prediction === 'BIG';
+              status = (isBig === predictedBig) ? 'WIN' : 'LOSS';
+            } else {
+              status = (String(actualNumber) === String(oldItem.number)) ? 'WIN' : 'LOSS';
+            }
+            return {
+              ...oldItem,
+              status,
+            };
+          }
+        }
+        return oldItem;
+      });
+      return changed ? updated : prev;
+    });
+  }, [activeMode]);
+
   return (
     <div className="relative min-h-screen flex flex-col font-sans overflow-x-hidden">
       {page === 'landing' && (
@@ -125,6 +154,7 @@ export default function App() {
             timeFrame={activeTimeFrame}
             onExit={handleExitGame}
             onAddHistoryItem={handleAddHistoryItem}
+            onUpdateDraws={handleUpdateDraws}
           />
         </div>
       )}
