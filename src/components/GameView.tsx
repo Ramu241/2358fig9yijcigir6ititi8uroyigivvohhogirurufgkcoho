@@ -72,6 +72,7 @@ export const GameView: React.FC<GameViewProps> = ({
   
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   // Current prediction state
   const [prediction, setPrediction] = useState<'BIG' | 'SMALL' | 'SKIP'>('SKIP');
@@ -245,7 +246,7 @@ export const GameView: React.FC<GameViewProps> = ({
     const cleanPeriod = period; // raw period e.g. 20260719100010123
     const predStr = prediction === 'BIG' ? 'BIGGG' : prediction === 'SMALL' ? 'SMALL' : 'SKIP';
     const activeStake = LEVEL_STAKES[challengeLevel - 1] || 10;
-    const textToCopy = `500. TO. 1K\n\nPERIOD NO.👉. ${cleanPeriod} 👉 ${predStr}\n\nBET AMOUNT 👉. ₹${activeStake}`;
+    const textToCopy = `PERIOD NO.👉. ${cleanPeriod} 👉 ${predStr}\n\nBET AMOUNT 👉. ₹${activeStake}`;
     
     try {
       navigator.clipboard.writeText(textToCopy);
@@ -269,6 +270,16 @@ export const GameView: React.FC<GameViewProps> = ({
       }
       document.body.removeChild(textArea);
     }
+  };
+
+  const handleExit = () => {
+    localStorage.removeItem('wingo_challenge_capital');
+    localStorage.removeItem('wingo_challenge_level');
+    localStorage.removeItem('wingo_challenge_history');
+    localStorage.removeItem('wingo_challenge_pending_bet_period');
+    localStorage.removeItem('wingo_challenge_pending_bet_pred');
+    localStorage.removeItem('wingo_challenge_pending_bet_level');
+    onExit();
   };
 
   // Floating bubble position state
@@ -784,34 +795,45 @@ export const GameView: React.FC<GameViewProps> = ({
               </div>
             )}
 
-            {/* Streak History Details */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[7.5px] text-slate-400 font-black tracking-widest uppercase">
-                Challenge Streak History
-              </span>
-              <div className="flex flex-wrap gap-1 min-h-[22px] max-h-24 overflow-y-auto p-1.5 rounded bg-slate-950 border border-slate-900/80 items-center justify-start">
-                {challengeHistory.length > 0 ? (
-                  challengeHistory.map((log, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center gap-0.5 bg-slate-900 border border-slate-800/60 px-1 py-0.5 rounded text-[8px] font-semibold text-slate-300 select-none animate-fade-in"
-                      title={`Period: ${log.period} | Level: ${log.level} | Stake: ₹${log.stake} | Balance: ₹${log.capital}`}
-                    >
-                      <span>{log.status === 'WIN' ? '🟢' : '🔴'}</span>
-                      <span className="font-mono text-[7px] text-slate-400">₹{log.stake}</span>
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-[7px] text-slate-500 tracking-wider font-bold uppercase italic">
-                    Log WINS/LOSSES to view trend
+            {/* Streak History Details - Collapsible */}
+            <div className="flex flex-col gap-1 border-t border-slate-900/50 pt-2 mt-0.5">
+              <button
+                onClick={() => setShowHistory(prev => !prev)}
+                className="w-full py-1 rounded bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 text-[8px] font-black tracking-widest text-slate-400 hover:text-cyan-400 uppercase flex items-center justify-center gap-1 cursor-pointer transition-colors"
+              >
+                📊 {showHistory ? "HIDE HISTORY" : "SHOW HISTORY"}
+              </button>
+
+              {showHistory && (
+                <div className="flex flex-col gap-1 mt-1 select-none animate-fade-in">
+                  <span className="text-[7.5px] text-slate-400 font-black tracking-widest uppercase">
+                    Challenge Streak History
                   </span>
-                )}
-              </div>
+                  <div className="flex flex-wrap gap-1 min-h-[22px] max-h-24 overflow-y-auto p-1.5 rounded bg-slate-950 border border-slate-900/80 items-center justify-start">
+                    {challengeHistory.length > 0 ? (
+                      challengeHistory.map((log, idx) => (
+                        <div 
+                          key={idx} 
+                          className="flex items-center gap-0.5 bg-slate-900 border border-slate-800/60 px-1 py-0.5 rounded text-[8px] font-semibold text-slate-300 select-none"
+                          title={`Period: ${log.period} | Level: ${log.level} | Stake: ₹${log.stake} | Balance: ₹${log.capital}`}
+                        >
+                          <span>{log.status === 'WIN' ? '🟢' : '🔴'}</span>
+                          <span className="font-mono text-[7px] text-slate-400">₹{log.stake}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-[7px] text-slate-500 tracking-wider font-bold uppercase italic">
+                        No History Yet
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={onExit}
+              onClick={handleExit}
               className="py-3 rounded-lg border border-red-500/25 bg-red-950/10 hover:bg-red-950/20 active:scale-95 text-[10px] font-black tracking-widest text-red-400 uppercase flex items-center justify-center gap-1 cursor-pointer transition-all"
             >
               <LogOut className="w-3.5 h-3.5" />
